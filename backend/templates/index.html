@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroNest AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --container-bg: #ffffff;
+            --user-bubble-bg: #0084ff;
+            --bot-bubble-bg: #e4e6eb;
+            --text-color-primary: #050505;
+            --text-color-secondary: #ffffff;
+            --border-color: #ced0d4;
+            --button-bg: #e7f3ff;
+            --button-text: #0084ff;
+            --font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden; /* Hide scrollbars during splash */
+        }
+        
+        /* --- Splash Screen Styles --- */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1c1c1e; /* Dark background for the splash */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 1;
+            transition: opacity 0.5s ease-out; /* Fade out transition */
+        }
+
+        #splash-screen.hidden {
+            opacity: 0;
+        }
+        
+        #splash-text {
+            color: white;
+            font-size: 3rem;
+            font-weight: 600;
+        }
+
+        #splash-text span {
+            opacity: 0;
+            display: inline-block;
+            animation: floatUp 0.6s ease-out forwards;
+        }
+        
+        @keyframes floatUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Main Chat App Styles --- */
+        .chat-container {
+            width: 450px;
+            max-width: 95%;
+            height: 700px;
+            max-height: 90vh;
+            background: var(--container-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.5s ease-in, transform 0.5s ease-in;
+        }
+        
+        .chat-container.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        /* --- CORRECTED HEADER STYLES --- */
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex; /* Enable flexbox for alignment */
+            justify-content: space-between; /* Space between title and buttons */
+            align-items: center; /* Vertically align items in the center */
+        }
+        
+        .chat-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--text-color-primary);
+        }
+
+        .chat-header-buttons a {
+            text-decoration: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .logout-button {
+            background: #e4e6eb;
+            color: #050505;
+        }
+
+        .logout-button:hover {
+            background-color: #d8dadf;
+        }
+
+        .admin-link {
+            background: #f0ad4e; /* Warning yellow */
+            color: white;
+        }
+
+        .admin-link:hover {
+            background-color: #ec9c2c;
+        }
+        
+        .mode-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 0.75rem;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .mode-buttons button {
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .mode-buttons button:hover {
+            background-color: #d0e7ff;
+        }
+        
+        #reset-button {
+            background-color: #e4e6eb;
+            color: #65676b;
+        }
+        #reset-button:hover {
+            background-color: #d8dadf;
+        }
+
+        .messages {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        .messages::-webkit-scrollbar-thumb {
+            background-color: #bcc0c4;
+            border-radius: 3px;
+        }
+
+        .message-bubble {
+            padding: 0.6rem 1rem;
+            border-radius: 18px;
+            max-width: 75%;
+            word-wrap: break-word;
+        }
+        
+        .user-message {
+            background-color: var(--user-bubble-bg);
+            color: var(--text-color-secondary);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-message {
+            background-color: var(--bot-bubble-bg);
+            color: var(--text-color-primary);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .system-message {
+            font-size: 0.8rem;
+            color: #65676b;
+            text-align: center;
+            align-self: center;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        #user-input {
+            flex-grow: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        #send-button {
+            background: none;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+        
+        #send-button svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--user-bubble-bg);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <h1 id="splash-text"></h1>
+    </div>
+
+    <div class="chat-container" id="chat-container">
+        <div class="chat-header">
+            <h2>NeuroNest AI</h2>
+            <div class="chat-header-buttons">
+                {% if user_role == 'admin' %}
+                    <a href="/admin" class="admin-link">Admin</a>
+                {% endif %}
+                <a href="/logout" class="logout-button">Logout</a>
+            </div>
+        </div>
+        <div class="mode-buttons">
+            <button data-mode="calm_therapist">Calm Therapist</button>
+            <button data-mode="friendly_buddy">Friendly Buddy</button>
+            <button data-mode="supportive_listener">Supportive Listener</button>
+            <button id="reset-button">Reset Chat</button>
+        </div>
+        <div class="messages" id="messages"></div>
+        <div class="input-area">
+            <input id="user-input" type="text" placeholder="Type a message...">
+            <button id="send-button" title="Send">
+                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Splash Screen Logic ---
+            const splashText = document.getElementById('splash-text');
+            const textToAnimate = "NeuroNest AI";
+
+            textToAnimate.split('').forEach((char, index) => {
+                const span = document.createElement('span');
+                span.innerHTML = char === ' ' ? '&nbsp;' : char;
+                span.style.animationDelay = `${index * 0.1}s`;
+                splashText.appendChild(span);
+            });
+
+            const totalAnimationTime = (textToAnimate.length * 100) + 1500;
+
+            setTimeout(() => {
+                const splashScreen = document.getElementById('splash-screen');
+                const chatContainer = document.getElementById('chat-container');
+
+                splashScreen.classList.add('hidden');
+                
+                splashScreen.addEventListener('transitionend', () => {
+                    splashScreen.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                });
+
+                chatContainer.classList.add('visible');
+
+            }, totalAnimationTime);
+
+
+            // --- Chat App Logic ---
+            const messagesDiv = document.getElementById('messages');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+            const modeButtons = document.querySelectorAll('.mode-buttons button[data-mode]');
+            const resetButton = document.getElementById('reset-button');
+            
+            let currentMode = 'calm_therapist';
+            let typingInterval = null;
+
+            function typeMessage(bubble, text) {
+                if (typingInterval) clearInterval(typingInterval);
+                const words = text.split(' ');
+                let i = 0;
+                bubble.textContent = '';
+                typingInterval = setInterval(() => {
+                    if (i < words.length) {
+                        bubble.textContent += (i > 0 ? ' ' : '') + words[i];
+                        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                        i++;
+                    } else {
+                        clearInterval(typingInterval);
+                    }
+                }, 100);
+            }
+
+            function addMessageToUI(text, sender) {
+                const messageBubble = document.createElement('div');
+                messageBubble.classList.add('message-bubble');
+                if (sender === 'user') {
+                    messageBubble.classList.add('user-message');
+                    messageBubble.textContent = text;
+                    messagesDiv.appendChild(messageBubble);
+                } else if (sender === 'bot') {
+                    messageBubble.classList.add('bot-message');
+                    messagesDiv.appendChild(messageBubble);
+                    typeMessage(messageBubble, text);
+                } else {
+                    messageBubble.classList.add('system-message');
+                    messageBubble.textContent = text;
+                    messagesDiv.appendChild(messageBubble);
+                }
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+
+            async function sendMessage() {
+                const message = userInput.value.trim();
+                if (message === '') return;
+                addMessageToUI(message, 'user');
+                userInput.value = '';
+                try {
+                    const response = await fetch('/get', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: message, personality: currentMode })
+                    });
+                    if (!response.ok) throw new Error(`Server error: ${response.status}`);
+                    const data = await response.json();
+                    addMessageToUI(data.response, 'bot');
+                } catch (error) {
+                    console.error('Error fetching bot response:', error);
+                    addMessageToUI('Sorry, something went wrong. Please try again.', 'bot');
+                }
+            }
+            
+            async function setMode(mode) {
+                try {
+                    const response = await fetch('/set_mode', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mode: mode })
+                    });
+                    const data = await response.json();
+                    currentMode = data.current_mode;
+                    addMessageToUI(`Mode switched to: ${currentMode.replace('_', ' ')}`, 'system');
+                } catch (error) {
+                    console.error('Error setting mode:', error);
+                    addMessageToUI('Could not switch modes.', 'system');
+                }
+            }
+
+            async function loadHistory() {
+                try {
+                    const response = await fetch('/history');
+                    const chats = await response.json();
+                    messagesDiv.innerHTML = '';
+                    for (const chat of chats) {
+                        const userBubble = document.createElement('div');
+                        userBubble.className = 'message-bubble user-message';
+                        userBubble.textContent = chat.user_msg;
+                        messagesDiv.appendChild(userBubble);
+                        const botBubble = document.createElement('div');
+                        botBubble.className = 'message-bubble bot-message';
+                        botBubble.textContent = chat.bot_response;
+                        messagesDiv.appendChild(botBubble);
+                    }
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                } catch (error) {
+                    console.error('Error loading history:', error);
+                    addMessageToUI('Could not load chat history.', 'system');
+                }
+            }
+
+            sendButton.addEventListener('click', sendMessage);
+            userInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') sendMessage();
+            });
+
+            modeButtons.forEach(button => {
+                button.addEventListener('click', () => setMode(button.dataset.mode));
+            });
+
+            resetButton.addEventListener('click', () => {
+                if (typingInterval) clearInterval(typingInterval);
+                messagesDiv.innerHTML = '';
+                addMessageToUI('Chat has been reset.', 'system');
+            });
+
+            // Initial Load for chat history after splash screen
+            loadHistory();
+        });
+    </script>
+</body>
+</html>
